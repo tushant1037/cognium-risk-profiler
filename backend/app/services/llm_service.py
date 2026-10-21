@@ -3,7 +3,8 @@ from typing import Optional
 from app.config import settings
 from app.models.assessment import AssessmentResult
 from app.models.recommendation import RecommendationResult
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 class LLMNarrativeService:
     """
@@ -97,14 +98,8 @@ class LLMNarrativeService:
             circumstances,
         )
 
-        if provider in ("grok", "xai"):
-            return self._call_grok(prompt)
-
-        elif provider in ("gemini", "google"):
+        if provider == "gemini":
             return self._call_gemini(prompt)
-
-        elif provider in ("openai", "chatgpt"):
-            return self._call_openai(prompt)
 
         return None
 
@@ -158,42 +153,39 @@ class LLMNarrativeService:
             "- Do not imply that the allocation guarantees capital preservation."
         )
 
-    def _call_grok(self, prompt: str) -> Optional[str]:
-        api_key = getattr(settings, "GROK_API_KEY", "")
-
+    def _call_gemini(self, prompt: str) -> Optional[str]:
+        api_key = settings.GEMINI_API_KEY
         if not api_key:
-            print("GROK_API_KEY is not configured.")
+            print("GEMINI_API_KEY is not configured.")
             return None
 
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.x.ai/v1",
-            timeout=settings.LLM_TIMEOUT_SECONDS,
-        )
-
-        response = client.chat.completions.create(
-            model=settings.LLM_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
+        try:
+            client = genai.Client(
+                api_key=api_key,
+                http_options=types.HttpOptions(
+                    timeout=settings.LLM_TIMEOUT_SECONDS * 1000
+                ),
+            )
+            response = client.models.generate_content(
+                model=settings.LLM_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
                         "You are a fiduciary investment commentary assistant "
-                        "at Cognium Inc. Follow the supplied factual constraints. "
-                        "Never invent financial data or change the computed "
-                        "portfolio recommendation."
+                        "at Cognium Inc. Follow all factual constraints. "
+                        "Never invent financial data, change asset allocations, "
+                        "or recommend additional securities."
                     ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-            max_tokens=600,
-        )
+                    temperature=0.2,
+                    max_output_tokens=600,
+                ),
+            )
+            content = response.text
+            return content.strip() if content else None
 
-        if not response.choices:
+        except Exception as e:
+            print(f"Gemini SDK call failed: {type(e).__name__}")
             return None
-
-        content = response.choices[0].message.content
-        return content.strip() if content else None
 
     def _verify_guardrails(
         self,

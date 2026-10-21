@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,9 +42,15 @@ class Settings(BaseSettings):
     YFINANCE_TIMEOUT_SECONDS: int = 5
     ENABLE_LIVE_YFINANCE: bool = True
     MARKET_DATA_CACHE_TTL_SECONDS: int = 3600
+
+    # LLM 
+    GEMINI_API_KEY: str = ""
+    LLM_PROVIDER: str = "gemini"
+    LLM_MODEL: str = "gemini-2.5-flash"
+    LLM_TIMEOUT_SECONDS: int = 30
     
     model_config = {
-        "env_file": ".env",
+        "env_file": BASE_DIR / ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "ignore"
@@ -54,4 +59,4 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Ensure local storage directory exists
-os.makedirs(settings.LOCAL_STORAGE_DIR, exist_ok=True)
+settings.LOCAL_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
