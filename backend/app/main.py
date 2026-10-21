@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.endpoints.natural_language import router as natural_language_router
 from app.api.v1.router import api_router
 from app.config import settings
 
@@ -25,6 +26,7 @@ app.add_middleware(
 
 # Mount API V1
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(natural_language_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
