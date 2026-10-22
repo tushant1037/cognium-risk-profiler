@@ -83,3 +83,11 @@ Run the backend tests from `backend/`:
 ```bash
 uv run pytest
 ```
+
+## What you cut, why, and what you'd do next
+
+- I tried to cover all scenarios and edge cases mentioned in assessment but still there is scope of improvement where LLM is integrated
+- LLM finetuning is required. it can be achieved after trial and error and started using app extensively. 
+- Added additional feature where user can search funds based on natural language search. Here also finetuning required.
+- I initially planned to create user specific sessions, login with gmail, integrate firebase backend as a service quick integration for auth, storage and deployment. As of now, not added it due to time constraint, just kept guest session. I will cover it next
+- Unit tests are not covered in this version. I will try to cover it next
