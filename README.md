@@ -1,5 +1,11 @@
 # Cognium Risk Profiler
 
+## Demo
+
+[![Watch the Cognium Risk Profiler demo](https://img.youtube.com/vi/3IGnOUSstfw/hqdefault.jpg)](https://youtu.be/3IGnOUSstfw?si=uW5CYgr7ZF4rGrvv)
+
+Click the thumbnail to watch the demo on YouTube.
+
 The
 backend is a FastAPI service managed with `uv`; the frontend is a React, Vite,
 TypeScript, and Tailwind CSS app managed with `npm`.
@@ -77,4 +83,3 @@ Run the backend tests from `backend/`:
 ```bash
 uv run pytest
 ```
-
