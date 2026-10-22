@@ -93,6 +93,7 @@ export function RecommendationView({
   onSave,
   onEdit,
   onNew,
+  readOnly = false,
 }: {
   result: AssessmentPreview;
   savedRecord: AssessmentRecord | null;
@@ -100,6 +101,7 @@ export function RecommendationView({
   onSave: () => void;
   onEdit: () => void;
   onNew: () => void;
+  readOnly?: boolean;
 }) {
   const { assessment, recommendation } = result;
   const metrics = recommendation.portfolio_metrics;
@@ -109,11 +111,12 @@ export function RecommendationView({
     <section className="content-column results-column">
       <div className="result-banner">
         <div className="result-banner-main">
-          <span className="result-kicker"><Icon name="check" size={14} /> YOUR ASSESSMENT IS READY</span>
-          <h1>A profile built around <em>you.</em></h1>
+          <span className="result-kicker"><Icon name="check" size={14} /> {readOnly ? "SAVED ASSESSMENT" : "YOUR ASSESSMENT IS READY"}</span>
+          <h1>{readOnly ? <>Your profile, <em>at that time.</em></> : <>A profile built around <em>you.</em></>}</h1>
           <p>
-            We combined your financial capacity and comfort with risk to create a
-            clear starting point for your portfolio.
+            {readOnly
+              ? "This is the recommendation saved with this historical assessment."
+              : "We combined your financial capacity and comfort with risk to create a clear starting point for your portfolio."}
           </p>
         </div>
         <div className="profile-seal">
@@ -274,26 +277,28 @@ export function RecommendationView({
         </div>
       )}
 
-      <div className="result-actions">
-        <div className="result-action-left">
-          <button className="button button-quiet" type="button" onClick={onEdit}>
-            <Icon name="arrow-left" size={16} /> Review answers
-          </button>
-          {savedRecord && (
-            <button className="button button-quiet" type="button" onClick={onNew}>
-              <Icon name="plus" size={16} /> New assessment
+      {!readOnly && (
+        <div className="result-actions">
+          <div className="result-action-left">
+            <button className="button button-quiet" type="button" onClick={onEdit}>
+              <Icon name="arrow-left" size={16} /> Review answers
             </button>
-          )}
+            {savedRecord && (
+              <button className="button button-quiet" type="button" onClick={onNew}>
+                <Icon name="plus" size={16} /> New assessment
+              </button>
+            )}
+          </div>
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || Boolean(savedRecord)}
+          >
+            {isSaving ? <><span className="spinner" /> Saving record</> : savedRecord ? <><Icon name="check" size={16} /> Assessment saved</> : <>Save assessment <Icon name="arrow-right" size={16} /></>}
+          </button>
         </div>
-        <button
-          className="button button-primary"
-          type="button"
-          onClick={onSave}
-          disabled={isSaving || Boolean(savedRecord)}
-        >
-          {isSaving ? <><span className="spinner" /> Saving record</> : savedRecord ? <><Icon name="check" size={16} /> Assessment saved</> : <>Save assessment <Icon name="arrow-right" size={16} /></>}
-        </button>
-      </div>
+      )}
       <p className="disclaimer-copy">
         This is an educational exercise, not financial advice. Returns, yields and drawdowns shown
         are historical and are not forecasts. Consider speaking with a qualified financial adviser.

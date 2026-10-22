@@ -48,8 +48,12 @@ export default function App() {
 
   const [records, setRecords] = useState<AssessmentRecord[]>([]);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [isVerifyingRecord, setIsVerifyingRecord] = useState(false);
   const [recordsError, setRecordsError] = useState("");
-  const [selectedRecord, setSelectedRecord] = useState<RecordVerification | null>(null);
+  const [selectedHistoryRecord, setSelectedHistoryRecord] =
+    useState<AssessmentRecord | null>(null);
+  const [recordVerification, setRecordVerification] =
+    useState<RecordVerification | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -82,18 +86,34 @@ export default function App() {
     if (page === "history") void refreshRecords();
   }, [page, refreshRecords]);
 
-  const openRecord = async (recordId: string) => {
+  const openRecord = (recordId: string) => {
     if (!recordId) {
-      setSelectedRecord(null);
+      setSelectedHistoryRecord(null);
+      setRecordVerification(null);
       return;
     }
     setRecordsError("");
+    setSelectedHistoryRecord(
+      records.find((record) => record.id === recordId) ?? null,
+    );
+    setRecordVerification(null);
+  };
+
+  const verifyRecord = async (recordId: string) => {
+    setRecordsError("");
+    setSelectedHistoryRecord(
+      records.find((record) => record.id === recordId) ?? null,
+    );
+    setRecordVerification(null);
+    setIsVerifyingRecord(true);
     try {
-      setSelectedRecord(await getRecord(recordId));
+      setRecordVerification(await getRecord(recordId));
     } catch (error) {
       setRecordsError(
         error instanceof Error ? error.message : "Unable to verify this record.",
       );
+    } finally {
+      setIsVerifyingRecord(false);
     }
   };
 
@@ -275,10 +295,13 @@ export default function App() {
           {page === "history" && (
             <HistoryView
               records={records}
-              selected={selectedRecord}
+              selected={selectedHistoryRecord}
+              verification={recordVerification}
               isLoading={isLoadingRecords}
+              isVerifying={isVerifyingRecord}
               error={recordsError}
-              onOpen={(id) => void openRecord(id)}
+              onOpen={openRecord}
+              onVerify={(id) => void verifyRecord(id)}
               onRefresh={() => void refreshRecords()}
             />
           )}

@@ -1836,6 +1836,19 @@ tbody tr:last-child td {
   padding-bottom: 13px;
 }
 
+tbody tr.history-row {
+  cursor: pointer;
+}
+
+tbody tr.history-row:hover td {
+  background: var(--surface-muted);
+}
+
+tbody tr.history-row:focus-visible td {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
 .link-button {
   display: inline-flex;
   align-items: center;
@@ -1851,6 +1864,11 @@ tbody tr:last-child td {
 
 .link-button:hover {
   color: var(--green-dark);
+}
+
+.link-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .verification-card {
@@ -1883,6 +1901,12 @@ tbody tr:last-child td {
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 10px;
+}
+
+.verification-card .verification-explainer {
+  margin-top: 9px;
+  color: var(--ink-soft);
+  line-height: 1.5;
   line-height: 1.5;
 }
 
@@ -1939,6 +1963,12 @@ tbody tr:last-child td {
   display: grid;
   gap: 6px;
   margin-top: 12px;
+}
+
+.verification-hash > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
 .verification-hash code {

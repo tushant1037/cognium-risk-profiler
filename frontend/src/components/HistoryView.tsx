@@ -1,5 +1,6 @@
 import type { AssessmentRecord, RecordVerification } from "../types";
 import { Icon } from "./Icon";
+import { RecommendationView } from "./RecommendationView";
 
 function profileName(profile: string) {
   return profile
@@ -10,18 +11,27 @@ function profileName(profile: string) {
 export function HistoryView({
   records,
   selected,
+  verification,
   isLoading,
+  isVerifying,
   error,
   onOpen,
+  onVerify,
   onRefresh,
 }: {
   records: AssessmentRecord[];
-  selected: RecordVerification | null;
+  selected: AssessmentRecord | null;
+  verification: RecordVerification | null;
   isLoading: boolean;
+  isVerifying: boolean;
   error: string;
   onOpen: (recordId: string) => void;
+  onVerify: (recordId: string) => void;
   onRefresh: () => void;
 }) {
+  const selectedVerification =
+    selected?.id === verification?.record.id ? verification : null;
+
   return (
     <section className="content-column history-column">
       <div className="page-heading">
@@ -40,36 +50,78 @@ export function HistoryView({
       {error && <div className="inline-error" role="alert"><Icon name="close" size={16} /> {error}</div>}
 
       {selected && (
-        <article className="verification-card">
-          <div className="verification-top">
-            <span className={`verification-icon ${selected.verified ? "positive" : "negative"}`}>
-              <Icon name={selected.verified ? "shield" : "close"} size={21} />
-            </span>
-            <div>
-              <p className="eyebrow">RECORD INTEGRITY</p>
-              <h2>{selected.verified ? "Record verified" : "Integrity check needs attention"}</h2>
-              <p>{selected.audit_notes}</p>
+        <>
+          <article className="verification-card">
+            <div className="verification-top">
+              <span
+                className={`verification-icon ${selectedVerification ? (selectedVerification.verified ? "positive" : "negative") : ""}`}
+              >
+                <Icon
+                  name={selectedVerification ? (selectedVerification.verified ? "shield" : "close") : "file"}
+                  size={21}
+                />
+              </span>
+              <div>
+                <p className="eyebrow">{selectedVerification ? "RECORD INTEGRITY" : "SAVED ASSESSMENT"}</p>
+                <h2>
+                  {selectedVerification
+                    ? selectedVerification.verified
+                      ? "Record verified"
+                      : "Integrity check needs attention"
+                    : "Historical assessment details"}
+                </h2>
+                <p>
+                  {selectedVerification
+                    ? selectedVerification.audit_notes
+                    : "This is the saved recommendation from this assessment. Verify its integrity to check that its original inputs and scoring details still match the saved hash."}
+                </p>
+                <p className="verification-explainer">
+                  {selectedVerification
+                    ? "The check recalculates the SHA-256 hash from the record’s original inputs, profile, scoring engine version, and creation time, then compares it with the saved hash."
+                    : "Opening the assessment shows its saved recommendation; it does not run the integrity check."}
+                </p>
+              </div>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Close record details"
+                onClick={() => onOpen("")}
+              >
+                <Icon name="close" />
+              </button>
             </div>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="Close record details"
-              onClick={() => onOpen("")}
-            >
-              <Icon name="close" />
-            </button>
-          </div>
-          <div className="verification-stats">
-            <div><span>Record ID</span><strong>{selected.record.id}</strong></div>
-            <div><span>Profile</span><strong>{profileName(selected.record.assessment.final_profile)}</strong></div>
-            <div><span>Created</span><strong>{new Date(selected.record.created_at).toLocaleString()}</strong></div>
-            <div><span>Engine version</span><strong>{selected.record.scoring_engine_version}</strong></div>
-          </div>
-          <div className="verification-hash">
-            <span>INTEGRITY HASH</span>
-            <code>{selected.record.integrity_hash}</code>
-          </div>
-        </article>
+            <div className="verification-stats">
+              <div><span>Record ID</span><strong>{selected.id}</strong></div>
+              <div><span>Profile</span><strong>{profileName(selected.assessment.final_profile)}</strong></div>
+              <div><span>Created</span><strong>{new Date(selected.created_at).toLocaleString()}</strong></div>
+              <div><span>Engine version</span><strong>{selected.scoring_engine_version}</strong></div>
+            </div>
+            <div className="verification-hash">
+              <div>
+                <span>STORED INTEGRITY HASH</span>
+                <code>{selected.integrity_hash}</code>
+              </div>
+              <button
+                className="button button-outline"
+                type="button"
+                onClick={() => onVerify(selected.id)}
+                disabled={isVerifying}
+              >
+                <Icon name="shield" size={15} />
+                {isVerifying ? "Checking integrity…" : selectedVerification ? "Verify again" : "Verify integrity"}
+              </button>
+            </div>
+          </article>
+          <RecommendationView
+            result={selected}
+            savedRecord={selected}
+            isSaving={false}
+            onSave={() => {}}
+            onEdit={() => {}}
+            onNew={() => {}}
+            readOnly
+          />
+        </>
       )}
 
       <div className="panel history-panel">
@@ -94,15 +146,37 @@ export function HistoryView({
               <thead><tr><th>Assessment</th><th>Date</th><th>Profile</th><th>Capacity</th><th>Tolerance</th><th /></tr></thead>
               <tbody>
                 {records.map((record) => (
-                  <tr key={record.id}>
+                  <tr
+                    key={record.id}
+                    className="history-row"
+                    onClick={() => onOpen(record.id)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.target === event.currentTarget &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
+                        event.preventDefault();
+                        onOpen(record.id);
+                      }
+                    }}
+                    tabIndex={0}
+                  >
                     <td><div className="fund-name"><strong>{record.id}</strong><span>Engine v{record.scoring_engine_version}</span></div></td>
                     <td>{new Date(record.created_at).toLocaleDateString()}</td>
                     <td><span className="profile-pill">{profileName(record.assessment.final_profile)}</span></td>
                     <td>{Math.round(record.assessment.capacity_score)}/100</td>
                     <td>{Math.round(record.assessment.tolerance_score)}/100</td>
                     <td>
-                      <button className="link-button" type="button" onClick={() => onOpen(record.id)}>
-                        Verify record <Icon name="arrow-right" size={14} />
+                      <button
+                        className="link-button"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onVerify(record.id);
+                        }}
+                        disabled={isVerifying}
+                      >
+                        {isVerifying ? "Checking…" : "Verify record"} <Icon name="arrow-right" size={14} />
                       </button>
                     </td>
                   </tr>
